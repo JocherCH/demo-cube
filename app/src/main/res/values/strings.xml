@@ -2,4 +2,6 @@
     <string name="app_name">DemoCube</string>
     <string name="praise_name">即刻点赞效果仿写</string>
     <string name="praise_set">设置</string>
+    <string name="praise_up">+1</string>
+    <string name="praise_down">-1</string>
 </resources>

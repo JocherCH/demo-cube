@@ -33,31 +33,38 @@ public class PraiseView extends View implements View.OnClickListener{
     private int startY;
     private float mOldOffsetY;
     private float mNewOffsetY;
+    private int distance = 50;
+    private float aplhaSet;
 
 
     public void setTextOffsetY(float offsetY) {
-
+        aplhaSet = offsetY;
         if(praised){
             mOldOffsetY = - offsetY;
-            mNewOffsetY = 100 - offsetY;
+            mNewOffsetY = distance - offsetY;
         }else{
             mOldOffsetY = offsetY;
-            mNewOffsetY = offsetY - 100;
+            mNewOffsetY = offsetY - distance;
         }
 
         invalidate();
     }
 
 
+    public int getPraiseNum() {
+        return praiseNum;
+    }
 
     public void setPraiseNum(int praiseNum) {
+        praised = praiseNum>this.praiseNum;
         calculateChangeNum(praiseNum);
         showThumbUpAnim();
+        this.praiseNum = praiseNum;
     }
 
     private void showThumbUpAnim(){
-        ObjectAnimator animator = ObjectAnimator.ofFloat(this,"textOffsetY",0,100);
-        animator.setDuration(5000);
+        ObjectAnimator animator = ObjectAnimator.ofFloat(this,"textOffsetY",0,distance);
+        animator.setDuration(500);
         animator.start();
     }
 
@@ -103,6 +110,15 @@ public class PraiseView extends View implements View.OnClickListener{
 
     @Override
     public void onClick(View v) {
+        praised = !praised;
+        if(praised){
+            calculateChangeNum(praiseNum+1);
+            praiseNum = praiseNum+1;
+        }else{
+            calculateChangeNum(praiseNum - 1);
+            praiseNum = praiseNum-1;
+        }
+        showThumbUpAnim();
 
     }
 
@@ -134,9 +150,9 @@ public class PraiseView extends View implements View.OnClickListener{
         canvas.drawRect(0,0,getWidth(),getHeight(),paint);
         paint.setColor(Color.BLACK);
         canvas.drawText(nums[0],startX,startY,paint);
-
+        paint.setAlpha(255 - (int)((255/distance)*aplhaSet));
         canvas.drawText(nums[1],startX + nums[0].length() * textWidth,startY + mOldOffsetY,paint);
-
+        paint.setAlpha((int)((255/distance)*aplhaSet));
         canvas.drawText(nums[2],startX + nums[0].length() * textWidth,startY + mNewOffsetY,paint);
     }
 
@@ -148,8 +164,6 @@ public class PraiseView extends View implements View.OnClickListener{
             nums[2] = "";
             return;
         }
-        //判断是否点赞
-        praised = newNum > praiseNum;
 
         String oldNum = String.valueOf(praiseNum);
         String new_Num = String.valueOf(newNum);
