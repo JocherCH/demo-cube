@@ -120,6 +120,7 @@ public class PraiseView extends View implements View.OnClickListener{
 
         normalBitmap = BitmapFactory.decodeResource(getResources(),R.drawable.ic_messages_like_unselected);
         praiseBitmap = BitmapFactory.decodeResource(getResources(),R.drawable.ic_messages_like_selected);
+        circleBitmap = BitmapFactory.decodeResource(getResources(),R.drawable.ic_messages_like_selected_shining);
     }
 
     @Override
@@ -152,11 +153,12 @@ public class PraiseView extends View implements View.OnClickListener{
                 isThumbUp = true;
             }
         });
+
         ObjectAnimator praiseAnim = ObjectAnimator.ofFloat(this,"praiseScale",SCALE_MIN,SCALE_MAX);
         praiseAnim.setInterpolator(new OvershootInterpolator());
         ObjectAnimator textAnim = ObjectAnimator.ofFloat(this,"textOffsetY",DISTANCE_MIN,DISTANCE_MAX);
         AnimatorSet anims = new AnimatorSet();
-        anims.setDuration(500);
+        anims.setDuration(250);
 
         anims.play(normalAnim).with(textAnim);
         anims.play(praiseAnim).after(normalAnim);
@@ -195,7 +197,7 @@ public class PraiseView extends View implements View.OnClickListener{
         });
         ObjectAnimator textAnim = ObjectAnimator.ofFloat(this,"textOffsetY",DISTANCE_MIN,DISTANCE_MAX);
         AnimatorSet anims = new AnimatorSet();
-        anims.setDuration(500);
+        anims.setDuration(250);
         anims.play(normalAnim).with(textAnim);
         anims.play(normalAnim).after(praiseAnim);
         anims.start();
@@ -206,6 +208,10 @@ public class PraiseView extends View implements View.OnClickListener{
         matrix.postScale(scale, scale);
         praiseBitmap = BitmapFactory.decodeResource(getResources(),R.drawable.ic_messages_like_selected);
         praiseBitmap = Bitmap.createBitmap(praiseBitmap, 0, 0, praiseBitmap.getWidth(), praiseBitmap.getHeight(),
+                matrix, true);
+
+        circleBitmap = BitmapFactory.decodeResource(getResources(),R.drawable.ic_messages_like_selected_shining);
+        circleBitmap = Bitmap.createBitmap(circleBitmap, 0, 0, circleBitmap.getWidth(), circleBitmap.getHeight(),
                 matrix, true);
         postInvalidate();
     }
@@ -238,6 +244,7 @@ public class PraiseView extends View implements View.OnClickListener{
     private void drawIcon(Canvas canvas){
         if(isThumbUp){
             canvas.drawBitmap(praiseBitmap,startX - praiseBitmap.getWidth(),startY,bitmapPaint);
+            canvas.drawBitmap(circleBitmap,startX - circleBitmap.getWidth(),startY-circleBitmap.getWidth(),bitmapPaint);
         }else{
             canvas.drawBitmap(normalBitmap,startX - normalBitmap.getWidth(),startY,bitmapPaint);
         }
