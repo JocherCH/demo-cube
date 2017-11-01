@@ -14,80 +14,82 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.view.animation.OvershootInterpolator;
 
 import com.rider.democube.R;
+import com.rider.democube.utils.Util;
 
 /**
  * Created by riderwu on 2017/10/26 0026.
  */
 
-public class PraiseView extends View implements View.OnClickListener{
+public class PraiseView extends View implements View.OnClickListener {
 
+    //两个数字之间的距离
+    private static final int OFFSET_NUM = 100;
+    //图标与背景的距离
+    private static final int OFFSET_ICON = 60;
+    //图标与数字之间的距离
+    private static final int OFFSET_ICON_NUM = 60;
+    //默认点赞数
+    private static final int COUNT_PRAISE = 99;
+    // 图标大小
+    private static final int SIZE_ICON = 16;
+    // 背景大小
+    private static final int SIZE_ICONBG = 16;
+    // 动画时间
+    private static final int DURATION = 250;
+    //文字默认颜色
+    private static final int COLOR_TEXT = Color.parseColor("#FF9F9E9F");
 
-    private static final int DEFAULT_NUM = 100;
-    private static final int DEFAULT_NORMAL_TEXTCOLOR = Color.parseColor("#FF9F9E9F");
-    private static final float SCALE_MAX = 1.0f;
-    private static final float SCALE_MIN = 0.5f;
-    private static final float DISTANCE_MAX = 50;
-    private static final float DISTANCE_MIN = 0;
+    private static final int SIZE_TEXT = 24;
 
-    private int praiseNum = DEFAULT_NUM;
-    private String[] nums = new String[]{"","",""};
+    private static final float SCALE_UP = 1.0f;
+    private static final float SCALE_DOWN = 0.5f;
+
+    private float scaleUp;
+    private float scaleDown;
+    private float getScaleDown;
+    private float offsetNum;
+    private float offsetIcon;
+    private float offsetIconNum;
+    private int countPraise;
+    private int sizeIcon;
+    private int sizeText;
+    private int sizeIconBg;
+    private int animDuration;
+    private int colorText;
+    private Bitmap normalBitmap;
+    private Bitmap praiseBitmap;
+    private Bitmap bgBitmap;
+
+    private String[] nums = new String[]{"", "", ""};
+    private boolean praiseState;
+    private boolean isThumbUp;
+    private float nowOffsetNum;
+    private float mOldOffsettNum;
+    private float mNewOffsettNum;
 
     private Paint paint;
     private Paint bitmapPaint;
 
-    private boolean praised = false;
-    private int textSize = 30;
-    private int startX;
-    private int startY;
-
-    private float mOldOffsetY;
-    private float mNewOffsetY;
-    private float aplhaSet;
-    private Bitmap normalBitmap;
-    private Bitmap praiseBitmap;
-    private Bitmap circleBitmap;
-    private boolean isThumbUp;
-
-
-    public void setTextOffsetY(float offsetY) {
-        aplhaSet = offsetY;
-        if(praised){
-            mOldOffsetY = - offsetY;
-            mNewOffsetY = DISTANCE_MAX - offsetY;
-        }else{
-            mOldOffsetY = offsetY;
-            mNewOffsetY = offsetY - DISTANCE_MAX;
-        }
-
-        postInvalidate();
-    }
-
-
-    public int getPraiseNum() {
-        return praiseNum;
-    }
-
-    public void setPraiseNum(int praiseNum) {
-        praised = praiseNum>this.praiseNum;
-        calculateChangeNum(praiseNum);
-//        showThumbUpAnim();
-        this.praiseNum = praiseNum;
-    }
-
-
+    private int centerX;
+    private int centerY;
+    private int startX_icon;
+    private int startY_icon;
+    private int startX_text;
+    private int startY_text;
 
     public PraiseView(Context context) {
         super(context);
-        init();
+        initData();
     }
 
     public PraiseView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
-        init();
+        initData();
     }
 
     public PraiseView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
@@ -96,56 +98,157 @@ public class PraiseView extends View implements View.OnClickListener{
         TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.PraiseView);
         try {
             int length = typedArray.getIndexCount();
-            for(int i = 0; i < length; i++){
+            for (int i = 0; i < length; i++) {
                 int attr = typedArray.getIndex(i);
-                switch (attr){
-                    case R.styleable.PraiseView_praiseNum:
-                        praiseNum = typedArray.getInteger(attr,DEFAULT_NUM);
+                switch (attr) {
+                    case R.styleable.PraiseView_praiseCount:
+                        countPraise = typedArray.getInteger(attr, COUNT_PRAISE);
+                        break;
+                    case R.styleable.PraiseView_iconPraise:
+                        praiseBitmap = BitmapFactory.decodeResource(getResources(),
+                                typedArray.getResourceId(attr, R.drawable.ic_messages_like_selected));
+                        break;
+                    case R.styleable.PraiseView_iconNormal:
+                        normalBitmap = BitmapFactory.decodeResource(getResources(),
+                                typedArray.getResourceId(attr, R.drawable.ic_messages_like_unselected));
+                        break;
+                    case R.styleable.PraiseView_iconBG:
+                        bgBitmap = BitmapFactory.decodeResource(getResources(),
+                                typedArray.getResourceId(attr, R.drawable.ic_messages_like_selected_shining));
+                        break;
+                    case R.styleable.PraiseView_iconSize:
+                        sizeIcon = typedArray.getInteger(attr, Util.dip2px(getContext(),SIZE_ICON));
+                        break;
+                    case R.styleable.PraiseView_iconBGSize:
+                        sizeIconBg = typedArray.getInteger(attr,Util.dip2px(getContext(),SIZE_ICONBG));
+                        break;
+                    case R.styleable.PraiseView_textColor:
+                        colorText = typedArray.getColor(attr,COLOR_TEXT);
+                        break;
+                    case R.styleable.PraiseView_textSize:
+                        sizeText = typedArray.getInteger(attr,Util.sp2px(getContext(),SIZE_TEXT));
+                        break;
+                    case R.styleable.PraiseView_duration:
+                        animDuration = typedArray.getInteger(attr,DURATION);
+                        break;
+                    case R.styleable.PraiseView_numOffset:
+                        offsetNum = typedArray.getFloat(attr,OFFSET_NUM);
+                        break;
+                    case R.styleable.PraiseView_numOffsetIcon:
+                        offsetIconNum = typedArray.getFloat(attr,OFFSET_ICON_NUM);
+                        break;
+                    case R.styleable.PraiseView_iconOffset:
+                        offsetIcon = typedArray.getFloat(attr,OFFSET_ICON);
                         break;
                 }
             }
-        }finally {
+        } finally {
             typedArray.recycle();
         }
-        init();
+        initData();
     }
 
+    private void initData(){
+        if(countPraise == 0){
+            countPraise = COUNT_PRAISE;
+        }
 
-    private void init(){
+        if(offsetNum == 0){
+            offsetNum =OFFSET_NUM;
+        }
+
+        if(offsetIcon == 0){
+            offsetIcon = OFFSET_ICON;
+        }
+
+        if(offsetIconNum == 0){
+            offsetIconNum = OFFSET_ICON_NUM;
+        }
+
+        if(sizeIcon == 0){
+            sizeIcon =  SIZE_ICON;
+        }
+        if(sizeText == 0){
+            sizeText = Util.sp2px(getContext(),SIZE_TEXT);
+        }
+        if(sizeIconBg == 0){
+            sizeIconBg = SIZE_ICONBG;
+        }
+
+        if(animDuration == 0){
+            animDuration = DURATION;
+        }
+
+        if(colorText == 0){
+            colorText = COLOR_TEXT;
+        }
+
+        if(normalBitmap == null){
+            normalBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_messages_like_unselected);
+        }
+        if(praiseBitmap == null){
+            praiseBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_messages_like_selected);
+        }
+        if(bgBitmap == null){
+            bgBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_messages_like_selected_shining);
+        }
+
         //开启抗锯齿效果
         paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         bitmapPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         setOnClickListener(this);
-        nums[0] = String.valueOf(praiseNum);
+        nums[0] = String.valueOf(countPraise);
 
-        normalBitmap = BitmapFactory.decodeResource(getResources(),R.drawable.ic_messages_like_unselected);
-        praiseBitmap = BitmapFactory.decodeResource(getResources(),R.drawable.ic_messages_like_selected);
-        circleBitmap = BitmapFactory.decodeResource(getResources(),R.drawable.ic_messages_like_selected_shining);
+
+
+
     }
 
     @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        centerX = getWidth() / 2;
+        centerY = getHeight() / 2;
+        startX_icon = 0;
+        startY_icon = 0;
+
+        startX_text = (int)(centerX );
+        startY_text = (int)(centerY+sizeText);
+
+
+    }
+
+
+    @Override
+    protected void onDraw(Canvas canvas) {
+        super.onDraw(canvas);
+
+        drawIcon(canvas);
+        drawText(canvas);
+    }
+
+
+    @Override
     public void onClick(View v) {
-        praised = !praised;
-        if(praised){
-            praisetoUp();
-        }else{
-            praisetoDown();
+        praiseState = !praiseState;
+        if (praiseState) {
+            //点赞效果
+            calculateChangeNum(countPraise+1);
+            countPraise++;
+            ThumbstoLight();
+
+        } else {
+            //取消点赞效果
+            calculateChangeNum(countPraise -1);
+            countPraise--;
+            ThumbstoDrak();
+
         }
     }
 
+    private void ThumbstoLight(){
 
-    /**
-     * 点赞
-     */
-    private void  praisetoUp(){
-        calculateChangeNum(praiseNum+1);
-        showUpAnim();
-        praiseNum = praiseNum+1;
-    }
-
-    private void showUpAnim(){
-        // 三个动画，默认 bitmap ， 点赞 bitmap，光圈 bitmap
-        ObjectAnimator normalAnim = ObjectAnimator.ofFloat(this,"normalScale",SCALE_MAX,SCALE_MIN);
+        ObjectAnimator normalAnim = ObjectAnimator.ofFloat(this, "scaleDown", SCALE_UP, SCALE_DOWN);
         normalAnim.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
@@ -154,40 +257,20 @@ public class PraiseView extends View implements View.OnClickListener{
             }
         });
 
-        ObjectAnimator praiseAnim = ObjectAnimator.ofFloat(this,"praiseScale",SCALE_MIN,SCALE_MAX);
+        ObjectAnimator praiseAnim = ObjectAnimator.ofFloat(this, "scaleUp", SCALE_DOWN, SCALE_UP);
         praiseAnim.setInterpolator(new OvershootInterpolator());
-        ObjectAnimator textAnim = ObjectAnimator.ofFloat(this,"textOffsetY",DISTANCE_MIN,DISTANCE_MAX);
+        ObjectAnimator textAnim = ObjectAnimator.ofFloat(this, "offsetNum", 0, offsetNum);
         AnimatorSet anims = new AnimatorSet();
-        anims.setDuration(250);
-
+        anims.setDuration(animDuration);
         anims.play(normalAnim).with(textAnim);
         anims.play(praiseAnim).after(normalAnim);
         anims.start();
     }
 
-    private void setNormalScale(float scale){
-        Matrix matrix = new Matrix();
-        matrix.postScale(scale, scale);
-        normalBitmap = BitmapFactory.decodeResource(getResources(),R.drawable.ic_messages_like_unselected);
-        normalBitmap = Bitmap.createBitmap(normalBitmap, 0, 0, normalBitmap.getWidth(), normalBitmap.getHeight(),
-                matrix, true);
-        postInvalidate();
-    }
 
-    /**
-     * 取消点赞
-     */
-    private  void praisetoDown(){
-        calculateChangeNum(praiseNum - 1);
-        showDownAnim();
-        praiseNum = praiseNum-1;
-    }
+    private void ThumbstoDrak(){
 
-    private void showDownAnim(){
-        // 三个动画，默认 bitmap ， 点赞 bitmap，光圈 bitmap
-        ObjectAnimator normalAnim = ObjectAnimator.ofFloat(this,"normalScale",SCALE_MIN,SCALE_MAX);
-        normalAnim.setInterpolator(new OvershootInterpolator());
-        ObjectAnimator praiseAnim = ObjectAnimator.ofFloat(this,"praiseScale",SCALE_MAX,SCALE_MIN);
+        ObjectAnimator praiseAnim = ObjectAnimator.ofFloat(this, "scaleUp" , SCALE_UP,SCALE_DOWN);
         praiseAnim.addListener(new AnimatorListenerAdapter() {
             @Override
             public void onAnimationEnd(Animator animation) {
@@ -195,100 +278,73 @@ public class PraiseView extends View implements View.OnClickListener{
                 isThumbUp = false;
             }
         });
-        ObjectAnimator textAnim = ObjectAnimator.ofFloat(this,"textOffsetY",DISTANCE_MIN,DISTANCE_MAX);
+
+        ObjectAnimator normalAnim = ObjectAnimator.ofFloat(this, "scaleDown" ,SCALE_DOWN,SCALE_UP);
+        normalAnim.setInterpolator(new OvershootInterpolator());
+        ObjectAnimator textAnim = ObjectAnimator.ofFloat(this, "offsetNum", 0, -offsetNum);
         AnimatorSet anims = new AnimatorSet();
-        anims.setDuration(250);
-        anims.play(normalAnim).with(textAnim);
+        anims.setDuration(animDuration);
+        anims.play(praiseAnim).with(textAnim);
         anims.play(normalAnim).after(praiseAnim);
         anims.start();
     }
 
-    private void setPraiseScale(float scale){
-        Matrix matrix = new Matrix();
-        matrix.postScale(scale, scale);
-        praiseBitmap = BitmapFactory.decodeResource(getResources(),R.drawable.ic_messages_like_selected);
-        praiseBitmap = Bitmap.createBitmap(praiseBitmap, 0, 0, praiseBitmap.getWidth(), praiseBitmap.getHeight(),
-                matrix, true);
-
-        circleBitmap = BitmapFactory.decodeResource(getResources(),R.drawable.ic_messages_like_selected_shining);
-        circleBitmap = Bitmap.createBitmap(circleBitmap, 0, 0, circleBitmap.getWidth(), circleBitmap.getHeight(),
-                matrix, true);
-        postInvalidate();
-    }
 
 
 
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
-
-    }
-
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
-        startX = getWidth() / 2;
-        startY = getHeight() / 2;
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        super.onDraw(canvas);
-
-        drawIcon(canvas);
-
-        drawText(canvas);
-    }
 
 
-    private void drawIcon(Canvas canvas){
-        if(isThumbUp){
-            canvas.drawBitmap(praiseBitmap,startX - praiseBitmap.getWidth(),startY,bitmapPaint);
-            canvas.drawBitmap(circleBitmap,startX - circleBitmap.getWidth(),startY-circleBitmap.getWidth(),bitmapPaint);
-        }else{
-            canvas.drawBitmap(normalBitmap,startX - normalBitmap.getWidth(),startY,bitmapPaint);
+
+
+
+    private void drawIcon(Canvas canvas) {
+        if (isThumbUp) {
+            canvas.drawBitmap(bgBitmap,startX_icon,startY_icon+offsetIcon,bitmapPaint);
+            canvas.drawBitmap(praiseBitmap, startX_icon , startY_icon+offsetIcon*2, bitmapPaint);
+        } else {
+            canvas.drawBitmap(normalBitmap, startX_icon , startY_icon+offsetIcon*2, bitmapPaint);
         }
     }
 
-    private void drawText(Canvas canvas){
-        paint.setTextSize(textSize);
-//        paint.setColor(Color.YELLOW);
-        String text = String.valueOf(1);
-        float textWidth = paint.measureText(text) / text.length();
-//        canvas.drawRect(0,0,getWidth(),getHeight(),paint);
-        paint.setColor(Color.BLACK);
-        canvas.drawText(nums[0],startX,startY,paint);
-        paint.setAlpha(255 - (int)((255/DISTANCE_MAX)*aplhaSet));
-        canvas.drawText(nums[1],startX + nums[0].length() * textWidth,startY + mOldOffsetY,paint);
-        paint.setAlpha((int)((255/DISTANCE_MAX)*aplhaSet));
-        canvas.drawText(nums[2],startX + nums[0].length() * textWidth,startY + mNewOffsetY,paint);
+    private void drawText(Canvas canvas) {
+        paint.setTextSize(sizeText);
+        float length_0 = paint.measureText(nums[0]);
+        paint.setColor(COLOR_TEXT);
+        canvas.drawText(nums[0], startX_text, startY_text, paint);
+        paint.setAlpha(255 - (int) ((255 / offsetNum) * Math.abs(mOldOffsettNum)+0.5f));
+        canvas.drawText(nums[1], startX_text + length_0, startY_text - mOldOffsettNum, paint);
+        paint.setAlpha((int) ((255 / offsetNum) * Math.abs(mOldOffsettNum)+0.5f));
+        canvas.drawText(nums[2], startX_text + length_0, startY_text - mNewOffsettNum, paint);
     }
 
 
-    private void calculateChangeNum(int newNum){
-        if(newNum == praiseNum){
-            nums[0] = String.valueOf(praiseNum);
+    private void calculateChangeNum(int newNum) {
+        if (newNum == countPraise) {
+            nums[0] = String.valueOf(countPraise);
             nums[1] = "";
             nums[2] = "";
             return;
         }
 
-        String oldNum = String.valueOf(praiseNum);
+        String oldNum = String.valueOf(countPraise);
         String new_Num = String.valueOf(newNum);
         int oldLength = oldNum.length();
-        int newLength =new_Num .length();
+        int newLength = new_Num.length();
 
-        if(oldLength != newLength){
+        if (oldLength != newLength) {
             nums[0] = "";
             nums[1] = oldNum;
             nums[2] = new_Num;
-        }else{
-            for(int i = 0; i < oldLength; i++){
-                char oldChar = oldNum.charAt(i);
-                char newChar = new_Num.charAt(i);
-
-                if(oldChar!= newChar){
-                    nums[0] = oldNum.substring(0,i);
+        } else {
+            for (int i = 0; i < oldLength; i++) {
+                char oldC1 = oldNum.charAt(i);
+                char newC1 = new_Num.charAt(i);
+                if (oldC1 != newC1) {
+                    if (i == 0) {
+                        nums[0] = "";
+                    } else {
+                        nums[0] = new_Num.substring(0, i);
+                    }
                     nums[1] = oldNum.substring(i);
                     nums[2] = new_Num.substring(i);
                     break;
@@ -297,4 +353,48 @@ public class PraiseView extends View implements View.OnClickListener{
 
         }
     }
+
+    public void setCountPraise(int countPraise) {
+        this.countPraise = countPraise;
+        postInvalidate();
+    }
+
+    public void setPraiseState(boolean praiseState) {
+        this.praiseState = praiseState;
+    }
+
+    public void setOffsetNum(float offsetNum) {
+
+        this.mOldOffsettNum = offsetNum;//变大是从[0,1]，变小是[0,-1]
+        if (praiseState) {//从下到上[-1,0]
+            this.mNewOffsettNum = offsetNum - this.offsetNum;
+        } else {//从上到下[1,0]
+            this.mNewOffsettNum = this.offsetNum + offsetNum;
+        }
+
+        postInvalidate();
+    }
+
+    public void setScaleUp(float scaleUp) {
+        Matrix matrix = new Matrix();
+        matrix.postScale(scaleUp, scaleUp);
+        praiseBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_messages_like_selected);
+        praiseBitmap = Bitmap.createBitmap(praiseBitmap, 0, 0, praiseBitmap.getWidth(), praiseBitmap.getHeight(),
+                matrix, true);
+
+        bgBitmap = BitmapFactory.decodeResource(getResources(), R.drawable.ic_messages_like_selected_shining);
+        bgBitmap = Bitmap.createBitmap(bgBitmap, 0, 0, bgBitmap.getWidth(), bgBitmap.getHeight(),
+                matrix, true);
+        postInvalidate();
+    }
+
+    public void setScaleDown(float scaleDown) {
+        Matrix matrix = new Matrix();
+        matrix.postScale(scaleDown, scaleDown);
+        normalBitmap = BitmapFactory.decodeResource(getResources(),R.drawable.ic_messages_like_unselected);
+        normalBitmap = Bitmap.createBitmap(normalBitmap,0,0,normalBitmap.getWidth(),normalBitmap.getHeight(),matrix,true);
+        postInvalidate();
+    }
+
+
 }

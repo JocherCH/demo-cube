@@ -2,9 +2,29 @@
 <resources>
 
     <declare-styleable name="PraiseView">
-
-        <attr name="praiseNum" format="integer"/>
-
+        <!---
+        可以设置的属性
+        1. 点赞数
+        2. 左侧小图标资源以及大小
+        3. 左侧背景图标资源以及大小
+        4. 右侧文字颜色、大小
+        5. 动画时间
+        6. 数字之间的 offset 值
+        7. 图标与文字之间的 offset 值
+        8. 图标与背景之间的 offset 值
+       -->
+        <attr name="praiseCount" format="integer"/>
+        <attr name="iconNormal" format="reference"/>
+        <attr name="iconPraise" format="reference"/>
+        <attr name="iconSize" format="integer"/>
+        <attr name="iconBG" format="reference"/>
+        <attr name="iconBGSize" format="integer"/>
+        <attr name="textColor" format="color"/>
+        <attr name="textSize" format="color"/>
+        <attr name="duration" format="integer"/>
+        <attr name="numOffset" format="float"/>
+        <attr name="iconOffset" format="float"/>
+        <attr name="numOffsetIcon" format="float"/>
 
     </declare-styleable>
 
