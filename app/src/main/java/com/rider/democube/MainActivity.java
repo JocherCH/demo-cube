@@ -53,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
                 return getString(pageModels.get(position).getTitleRes());
             }
         });
+        tabLayout.setupWithViewPager(viewPager);
 
     }
 
