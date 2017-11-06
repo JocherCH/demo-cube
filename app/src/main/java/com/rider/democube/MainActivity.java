@@ -1,33 +1,59 @@
 package com.rider.democube;
 
-import android.content.Intent;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
+import android.support.annotation.Nullable;
+import android.support.design.widget.TabLayout;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.view.ViewPager;
+import android.support.v7.app.AppCompatActivity;
 
-import com.rider.democube.praise.PraiseActivity;
+import com.rider.democube.entity.PageModel;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
+
+
+    TabLayout tabLayout;
+
+    ViewPager viewPager;
+
+    List<PageModel> pageModels = new ArrayList<>();
+
+
+    {
+        pageModels.add(new PageModel(R.layout.sample_square_image_view,R.string.title_square_image_view,R.layout.practice_square_image_view));
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        tabLayout = findViewById(R.id.tabLayout);
+        viewPager = findViewById(R.id.pager);
 
-        Button button = findViewById(R.id.btn_praise);
-        button.setOnClickListener(new View.OnClickListener() {
+        viewPager.setAdapter(new FragmentPagerAdapter(getSupportFragmentManager()) {
             @Override
-            public void onClick(View v) {
-                jumpView(PraiseActivity.class);
+            public Fragment getItem(int position) {
+                PageModel pageModel = pageModels.get(position);
+
+                return PageFragment.newInstance(pageModel.getSampleLayoutRes(),pageModel.getPracticeLayoutRes());
+            }
+
+            @Override
+            public int getCount() {
+                return pageModels.size();
+            }
+
+            @Nullable
+            @Override
+            public CharSequence getPageTitle(int position) {
+                return getString(pageModels.get(position).getTitleRes());
             }
         });
 
     }
 
-
-    private void jumpView(Class nextView){
-        Intent intent = new Intent(this,nextView);
-        startActivity(intent);
-    }
 }

@@ -4,4 +4,7 @@
     <string name="praise_set">设置</string>
     <string name="praise_up">+1</string>
     <string name="praise_down">-1</string>
+    <string name="name_tape">薄荷卷尺效果仿写</string>
+    <string name="practice1">自定义布局-布局基础</string>
+    <string name="title_square_image_view">布局基础</string>
 </resources>

@@ -19,8 +19,13 @@ android {
     }
 }
 
-dependencies {
-    implementation fileTree(dir: 'libs', include: ['*.jar'])
-    implementation 'com.android.support:appcompat-v7:26.1.0'
+def AAVersion = '4.4.0'
 
+dependencies {
+    compile  fileTree(include: ['*.jar'], dir: 'libs')
+    compile  'com.android.support:appcompat-v7:26.1.0'
+    compile  'com.android.support:design:27.0.0'
+    compile  'com.android.support:recyclerview-v7:27.0.0'
+
+    annotationProcessor "org.androidannotations:androidannotations:$AAVersion"
 }

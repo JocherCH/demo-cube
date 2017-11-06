@@ -17,9 +17,6 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".praise.PraiseActivity"
-            android:launchMode="singleTask"
-            />
-    </application>
+           </application>
 
 </manifest>
